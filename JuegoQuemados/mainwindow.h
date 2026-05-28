@@ -7,6 +7,7 @@
 #include <QGraphicsEllipseItem>
 #include <QTimer>
 #include "pelota.h" // Tu clase de física
+#include <QGraphicsRectItem>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -33,6 +34,11 @@ private:
     // Conexión con tus clases
     Pelota *miPelota;                         // Objeto físico
     QGraphicsEllipseItem *graficoPelota;     // Representación visual (el círculo)
+
+    QGraphicsRectItem *piso;
+    QGraphicsRectItem *paredIzquierda;
+    QGraphicsRectItem *paredDerecha;
+    QGraphicsRectItem *techo;
 };
 
 #endif // MAINWINDOW_H

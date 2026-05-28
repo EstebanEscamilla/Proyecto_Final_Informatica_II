@@ -3,27 +3,52 @@
 #include "excepciones.h"
 #include <QMessageBox>
 
+// ======================================================================
+// CONSTRUCTOR
+// ======================================================================
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow) {
+    : QMainWindow(parent)
+    , ui(new Ui::MainWindow)
+{
     ui->setupUi(this);
 
-    // 1. Configurar el tamaño de la ventana
+    // 1. Configurar el tamaño de la ventana principal
     this->resize(800, 600);
 
-    // 2. Crear la escena (un lienzo de 800x600 píxeles)
+    // 2. Crear la escena (El "mapa" interno de 800x600 píxeles)
     escena = new QGraphicsScene(0, 0, 800, 600, this);
 
-    // 3. Configurar la vista (cámara) para mostrar la escena
+    // 3. Configurar la vista (La "cámara" que muestra la escena)
     vista = new QGraphicsView(escena, this);
     vista->setGeometry(0, 0, 800, 600);
-    vista->setBackgroundBrush(Qt::black); // Fondo negro para pruebas
+    vista->setBackgroundBrush(Qt::darkGray); // Un tono gris de fondo
 
-    // 4. Instanciar tu objeto físico (X=50, Y=500, ancho=20, alto=20, elasticidad=0.8)
-    miPelota = new Pelota(50.0f, 500.0f, 20, 20, 0.8f);
+    // ==================================================================
+    // DIBUJO DEL ESCENARIO (BLOCKOUT)
+    // ==================================================================
+    // QGraphicsRectItem recibe (x, y, ancho, alto)
 
-    // 5. Crear la representación gráfica en la escena (un círculo rojo)
-    // Se crea en (0,0) localmente, luego la moveremos con la posición física
-    graficoPelota = escena->addEllipse(0, 0, 20, 20, QPen(Qt::red), QBrush(Qt::red));
+    // PISO (Abajo, de lado a lado, 20px de grosor)
+    piso = escena->addRect(0, 580, 800, 20, QPen(Qt::NoPen), QBrush(Qt::black));
+
+    // TECHO (Arriba, de lado a lado, 20px de grosor)
+    techo = escena->addRect(0, 0, 800, 20, QPen(Qt::NoPen), QBrush(Qt::black));
+
+    // PARED IZQUIERDA (De arriba a abajo, 20px de grosor)
+    paredIzquierda = escena->addRect(0, 0, 20, 600, QPen(Qt::NoPen), QBrush(Qt::black));
+
+    // PARED DERECHA (De arriba a abajo, en el borde derecho, 20px de grosor)
+    paredDerecha = escena->addRect(780, 0, 20, 600, QPen(Qt::NoPen), QBrush(Qt::black));
+
+    // ==================================================================
+    // CONFIGURACIÓN DE LA FÍSICA Y GRÁFICOS
+    // ==================================================================
+
+    // 4. Instanciar tu objeto físico (Nace en el centro, X=400, Y=300)
+    miPelota = new Pelota(400.0f, 300.0f, 30, 30, 0.8f);
+
+    // 5. Crear la representación gráfica en la escena (El círculo rojo)
+    graficoPelota = escena->addEllipse(0, 0, 30, 30, QPen(Qt::red), QBrush(Qt::red));
     graficoPelota->setPos(miPelota->getPosX(), miPelota->getPosY());
 
     // 6. Configurar el temporizador (Game Loop)
@@ -34,33 +59,37 @@ MainWindow::MainWindow(QWidget *parent)
     temporizador->start(16);
 
     // 7. Lanzar la pelota usando tu método físico aprobado
-    // Fuerza = 80.0f, Angulo = 45 grados (0.785 radianes)
     miPelota->lanzar(80.0f, 0.785f);
 }
 
-MainWindow::~MainWindow() {
+// ======================================================================
+// DESTRUCTOR
+// ======================================================================
+MainWindow::~MainWindow()
+{
     delete ui;
-    delete miPelota; // Limpieza de memoria
+    delete miPelota; // Limpiamos la memoria de nuestro objeto físico
 }
 
-void MainWindow::actualizarJuego() {
+// ======================================================================
+// MOTOR DEL JUEGO (GAME LOOP)
+// ======================================================================
+void MainWindow::actualizarJuego()
+{
     // Delta time fijo simulado para cada cuadro
     float dt = 0.05f;
 
     try {
-        // Ejecutamos tu lógica física aprobada
+        // 1. Ejecutamos tu lógica matemática
         miPelota->actualizar(dt);
 
-        // Sincronizamos los gráficos con la matemática física
-        // Trasladamos las coordenadas calculadas al círculo visual en pantalla
+        // 2. Sincronizamos los gráficos con la matemática
         graficoPelota->setPos(miPelota->getPosX(), miPelota->getPosY());
 
     }
     catch (const ExcepcionFisicaFueraDeLimites& e) {
-        // Si tu excepción física salta, detenemos el juego limpiamente
+        // Detenemos el reloj si la pelota sale de la pantalla
         temporizador->stop();
-
-        // Qt nos permite mostrar el error de tu excepción en una ventana flotante real
         QMessageBox::critical(this, "Fin del Trayecto", e.what());
     }
 }
