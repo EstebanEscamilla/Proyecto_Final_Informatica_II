@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     // 1. Configurar el tamaño de la ventana principal
-    this->resize(800, 600);
+    this->resize(802, 602);
 
     // 2. Crear la escena (El "mapa" interno de 800x600 píxeles)
     escena = new QGraphicsScene(0, 0, 800, 600, this);
@@ -51,6 +51,11 @@ MainWindow::MainWindow(QWidget *parent)
     graficoPelota = escena->addEllipse(0, 0, 30, 30, QPen(Qt::red), QBrush(Qt::red));
     graficoPelota->setPos(miPelota->getPosX(), miPelota->getPosY());
 
+    //Nacimiento de timmy
+    timmy = new Jugador(390.0f, 560.0f, 20, 20);
+    graficoTimmy = escena->addRect(0, 0, 20, 20, QPen(Qt::blue), QBrush(Qt::blue));
+    graficoTimmy->setPos(timmy->getPosX(), timmy->getPosY());
+
     // 6. Configurar el temporizador (Game Loop)
     temporizador = new QTimer(this);
     connect(temporizador, &QTimer::timeout, this, &MainWindow::actualizarJuego);
@@ -59,7 +64,8 @@ MainWindow::MainWindow(QWidget *parent)
     temporizador->start(16);
 
     // 7. Lanzar la pelota usando tu método físico aprobado
-    miPelota->lanzar(80.0f, 0.785f);
+    //miPelota->lanzar(80.0f, 0.785f);
+    pelotaEnMano = true;
 }
 
 // ======================================================================
@@ -74,22 +80,62 @@ MainWindow::~MainWindow()
 // ======================================================================
 // MOTOR DEL JUEGO (GAME LOOP)
 // ======================================================================
-void MainWindow::actualizarJuego()
-{
-    // Delta time fijo simulado para cada cuadro
+void MainWindow::actualizarJuego() {
     float dt = 0.05f;
 
     try {
-        // 1. Ejecutamos tu lógica matemática
-        miPelota->actualizar(dt);
+        timmy->aplicarFisica(dt);
 
-        // 2. Sincronizamos los gráficos con la matemática
+        // --- NUEVA LÓGICA DE LA PELOTA ---
+        if (pelotaEnMano) {
+            // Si la tiene en la mano, la pelota copia las coordenadas de Timmy
+            // Le sumamos +10 para que parezca que la tiene agarrada a un lado
+            miPelota->setPosicion(timmy->getPosX() + 10.0f, timmy->getPosY());
+        } else {
+            // Si ya la lanzó, la pelota obedece a la gravedad y a su propia física
+            miPelota->actualizar(dt);
+        }
+        // ---------------------------------
+
         graficoPelota->setPos(miPelota->getPosX(), miPelota->getPosY());
+        graficoTimmy->setPos(timmy->getPosX(), timmy->getPosY());
 
     }
     catch (const ExcepcionFisicaFueraDeLimites& e) {
-        // Detenemos el reloj si la pelota sale de la pantalla
         temporizador->stop();
         QMessageBox::critical(this, "Fin del Trayecto", e.what());
+    }
+}
+
+// ======================================================================
+// CONTROLES DEL JUGADOR (TECLADO)
+// ======================================================================
+
+void MainWindow::keyPressEvent(QKeyEvent *event) {
+    // Si Timmy aún no existe, evitamos que el programa colapse
+    if (!timmy) return;
+
+    // Movimiento
+    if (event->key() == Qt::Key_A) timmy->mover(-1, 0); // Izquierda
+    if (event->key() == Qt::Key_D) timmy->mover(1, 0);  // Derecha
+
+    // Carga de tiro
+    if (event->key() == Qt::Key_Space) {
+        timmy->iniciarCarga();
+    }
+}
+
+void MainWindow::keyReleaseEvent(QKeyEvent *event) {
+    if (!timmy) return;
+
+    if (event->key() == Qt::Key_Space) {
+        float fuerzav0 = timmy->soltarCarga();
+
+        // ¡Cambiamos el estado para que deje de seguir a Timmy!
+        pelotaEnMano = false;
+
+        if (miPelota) {
+            miPelota->lanzar(fuerzav0, 0.785f);
+        }
     }
 }

@@ -7,7 +7,9 @@
 #include <QGraphicsEllipseItem>
 #include <QTimer>
 #include "pelota.h" // Tu clase de física
+#include "jugador.h"
 #include <QGraphicsRectItem>
+#include <QKeyEvent>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -23,6 +25,10 @@ public:
 private slots:
     void actualizarJuego(); // El "corazón" del juego cuadro por cuadro
 
+protected:
+    void keyPressEvent(QKeyEvent *event) override;
+    void keyReleaseEvent(QKeyEvent *event) override;
+
 private:
     Ui::MainWindow *ui;
 
@@ -34,11 +40,16 @@ private:
     // Conexión con tus clases
     Pelota *miPelota;                         // Objeto físico
     QGraphicsEllipseItem *graficoPelota;     // Representación visual (el círculo)
+    Jugador *timmy;
+    bool pelotaEnMano;
 
     QGraphicsRectItem *piso;
     QGraphicsRectItem *paredIzquierda;
     QGraphicsRectItem *paredDerecha;
     QGraphicsRectItem *techo;
+    QGraphicsRectItem *graficoTimmy;
+
+
 };
 
 #endif // MAINWINDOW_H
