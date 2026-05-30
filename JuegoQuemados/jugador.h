@@ -15,6 +15,13 @@ private:
     bool estaAsustado;
     int vidas;
 
+    //Variables para la física del salto y gravedad
+    float velY;
+    float gravedad;
+    float fuerzaSalto;
+    bool enSuelo;
+    bool gravedadActiva;
+
     float radioTerror;
     float factorAdrenalina;
 
@@ -25,6 +32,11 @@ public:
 
     void iniciarCarga();
     float soltarCarga();
+
+    // Métodos de control físico
+    void saltar();
+    void setGravedadActiva(bool activa) { gravedadActiva = activa; }
+    void setEnSuelo(bool suelo) { enSuelo = suelo; if(suelo) velY = 0.0f; }
 
     // Cumpliendo todos los contratos de herencia
     void actualizar(float dt) override;

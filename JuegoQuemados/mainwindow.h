@@ -10,6 +10,8 @@
 #include "jugador.h"
 #include <QGraphicsRectItem>
 #include <QKeyEvent>
+#include <QGraphicsPixmapItem>
+#include <QPixmap>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -36,10 +38,11 @@ private:
     QGraphicsScene *escena;
     QGraphicsView *vista;
     QTimer *temporizador;
+    bool teclaIzquierda;
+    bool teclaDerecha;
 
     // Conexión con tus clases
     Pelota *miPelota;                         // Objeto físico
-    QGraphicsEllipseItem *graficoPelota;     // Representación visual (el círculo)
     Jugador *timmy;
     bool pelotaEnMano;
 
@@ -47,7 +50,16 @@ private:
     QGraphicsRectItem *paredIzquierda;
     QGraphicsRectItem *paredDerecha;
     QGraphicsRectItem *techo;
-    QGraphicsRectItem *graficoTimmy;
+
+    //gráficos geométricos por contenedores de Sprites
+    QGraphicsPixmapItem *graficoTimmy;
+    QGraphicsPixmapItem *graficoPelota;
+
+    int nivelActual;
+    bool teclaArriba;
+    bool teclaAbajo;
+
+    void cargarNivel(int numeroNivel);
 
 
 };

@@ -17,6 +17,9 @@ public:
 
     void actualizar(float dt) override;
     void aplicarFisica(float dt) override;
+
+    void rebotarHorizontal();
+    void rebotarVertical();
 };
 
 #endif // PELOTA_H

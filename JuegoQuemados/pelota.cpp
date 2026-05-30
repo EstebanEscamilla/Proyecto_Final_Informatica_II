@@ -38,3 +38,11 @@ void Pelota::actualizar(float dt) {
         aplicarFisica(dt);
     }
 }
+
+void Pelota::rebotarHorizontal() {
+    this->velX = -this->velX * this->elasticidad;
+}
+
+void Pelota::rebotarVertical() {
+    this->velY = -std::abs(this->velY) * this->elasticidad;
+}

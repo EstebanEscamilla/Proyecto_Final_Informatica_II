@@ -14,14 +14,16 @@ SOURCES += \
     fisicaobjeto.cpp \
     main.cpp \
     mainwindow.cpp \
-    pelota.cpp
+    pelota.cpp \
+    jugador.cpp
 
 HEADERS += \
     entidad.h \
     excepciones.h \
     fisicaobjeto.h \
     mainwindow.h \
-    pelota.h
+    pelota.h \
+    jugador.h
 
 FORMS += \
     mainwindow.ui
