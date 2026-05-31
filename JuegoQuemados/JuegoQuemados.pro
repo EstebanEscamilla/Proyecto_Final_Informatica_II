@@ -9,21 +9,27 @@ CONFIG += c++17
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    botonafilado.cpp \
     entidad.cpp \
     excepciones.cpp \
     fisicaobjeto.cpp \
     main.cpp \
     mainwindow.cpp \
+    osopeluche.cpp \
     pelota.cpp \
-    jugador.cpp
+    jugador.cpp \
+    pendulo.cpp
 
 HEADERS += \
+    botonafilado.h \
     entidad.h \
     excepciones.h \
     fisicaobjeto.h \
     mainwindow.h \
+    osopeluche.h \
     pelota.h \
-    jugador.h
+    jugador.h \
+    pendulo.h
 
 FORMS += \
     mainwindow.ui
