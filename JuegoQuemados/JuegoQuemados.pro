@@ -15,6 +15,7 @@ SOURCES += \
     fisicaobjeto.cpp \
     main.cpp \
     mainwindow.cpp \
+    munecocuerda.cpp \
     osopeluche.cpp \
     pelota.cpp \
     jugador.cpp \
@@ -26,6 +27,7 @@ HEADERS += \
     excepciones.h \
     fisicaobjeto.h \
     mainwindow.h \
+    munecocuerda.h \
     osopeluche.h \
     pelota.h \
     jugador.h \

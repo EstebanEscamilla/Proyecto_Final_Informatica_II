@@ -67,6 +67,13 @@ MainWindow::MainWindow(QWidget *parent)
     imgGancho = imgGancho.scaled(60, 60, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     graficoGancho = escena->addPixmap(imgGancho);
 
+    // Instanciar al Jefe Final (100x100 píxeles, inicia a la derecha del Nivel 2)
+    jefeFinal = new MunecoCuerda(650.0f, 380.0f, 100, 100);
+    QPixmap imgJefe("muneco_cuerda.jpeg");
+    imgJefe = imgJefe.scaled(100, 100, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    graficoJefe = escena->addPixmap(imgJefe);
+    graficoJefe->setPos(jefeFinal->getPosX(), jefeFinal->getPosY());
+
     // ======================================================================
     // CONFIGURACIÓN DEL HUD (CORAZONES Y TIEMPO)
     // ======================================================================
@@ -113,6 +120,7 @@ MainWindow::~MainWindow()
     delete timmy;
     delete osoTest;
     if (gancho) delete gancho;
+    if (jefeFinal) delete jefeFinal;
 }
 
 // ======================================================================
@@ -133,7 +141,7 @@ void MainWindow::cargarNivel(int numeroNivel) {
         if (filtroOscuro) filtroOscuro->show();
         if (graficoOsoTest) graficoOsoTest->show();
         if (graficoGancho) graficoGancho->hide();
-        //if (graficoJefe) graficoJefe->hide();
+        if (graficoJefe) graficoJefe->hide();
 
         // Ocultamos el fondo del almacén
         if (fondoFijoNivel2) fondoFijoNivel2->hide();
@@ -151,7 +159,7 @@ void MainWindow::cargarNivel(int numeroNivel) {
         if (filtroOscuro) filtroOscuro->hide();
         if (graficoOsoTest) graficoOsoTest->hide();
         if (graficoGancho) graficoGancho->show();
-        //if (graficoJefe) graficoJefe->show();
+        if (graficoJefe) graficoJefe->show();
 
         // Mostramos el fondo del almacén
         if (fondoFijoNivel2) fondoFijoNivel2->show();
@@ -181,6 +189,13 @@ void MainWindow::gameOver() {
     QApplication::quit(); // Cierra la aplicación
 }
 
+// FUNCIÓN VICTORIA
+void MainWindow::victoria() {
+    temporizador->stop();
+    QMessageBox::information(this, "¡VICTORIA!", "¡Has derrotado al Muñeco de Cuerda y escapado de la fábrica!\n¡Felicidades!");
+    QApplication::quit();
+}
+
 // Controles de Teclado
 void MainWindow::keyPressEvent(QKeyEvent *event) {
     if (!timmy || event->isAutoRepeat()) return;
@@ -192,7 +207,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event) {
     }
     if (event->key() == Qt::Key_S) teclaAbajo = true;
     if (event->key() == Qt::Key_Space) timmy->iniciarCarga();
-    // Quitamos la tecla 'N' para evitar saltar el nivel haciendo trampa
 }
 
 void MainWindow::keyReleaseEvent(QKeyEvent *event) {
@@ -246,6 +260,12 @@ void MainWindow::actualizarJuego() {
                 cargarNivel(2);
             }
         }
+        else if (nivelActual == 2 && jefeFinal) {
+            // Actualizamos el HUD de la vida del jefe
+            textoTiempo->setPlainText(QString("Salud Jefe: %1 / 5").arg(jefeFinal->getSalud()));
+        }
+
+
 
         // ==================================================================
         // ANIMACIÓN DEL FONDO (CINTA TRANSPORTADORA)
