@@ -53,6 +53,7 @@ private:
     QGraphicsPixmapItem *fondoCinta1;
     QGraphicsPixmapItem *fondoCinta2;
     QGraphicsRectItem *filtroOscuro;
+    QGraphicsPixmapItem *fondoFijoNivel2;
     float velCinta;
 
     // Protagonista y proyectil principal
@@ -72,7 +73,7 @@ private:
     std::vector<QGraphicsPixmapItem*> listaGraficosBotones;
 
     // NUEVO: Interfaz de Usuario (HUD) y Lógica de Progreso
-    QGraphicsTextItem *textoVidas;
+    std::vector<QGraphicsPixmapItem*> iconosVidas;
     QGraphicsTextItem *textoTiempo;
     int framesSobrevividos; // Contador interno para medir los segundos
     void gameOver();        // Función para terminar la partida

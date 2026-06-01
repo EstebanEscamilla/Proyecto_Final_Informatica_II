@@ -25,7 +25,7 @@ MainWindow::MainWindow(QWidget *parent)
     paredDerecha = escena->addRect(780, 0, 20, 600, QPen(Qt::black), QBrush(Qt::black));
 
     // 3. FONDOS MÓVILES Y FILTRO ÓPTICO
-    QPixmap imgFondo("cinta_fondo.png");
+    QPixmap imgFondo("cinta_fondo.jpeg");
     imgFondo = imgFondo.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
     fondoCinta1 = escena->addPixmap(imgFondo);
@@ -39,7 +39,14 @@ MainWindow::MainWindow(QWidget *parent)
     filtroOscuro = escena->addRect(0, 0, 800, 600, Qt::NoPen, QBrush(QColor(0, 0, 0, 150)));
     filtroOscuro->setZValue(-1);
 
-    // 4. INSTANCIACIÓN DE OBJETOS
+    // 4. FONDO CINTA NIVEL 2
+    QPixmap imgFondoNivel2("fondo_fabrica.jpeg");
+    imgFondoNivel2 = imgFondoNivel2.scaled(800, 600, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+    fondoFijoNivel2 = escena->addPixmap(imgFondoNivel2);
+    fondoFijoNivel2->setPos(0, 0);
+    fondoFijoNivel2->setZValue(-3);
+
+    // 5. INSTANCIACIÓN DE OBJETOS
     miPelota = new Pelota(400.0f, 300.0f, 50, 50, 0.8f);
     QPixmap imgPelota("pelota_dodgeball.png");
     imgPelota = imgPelota.scaled(50, 50, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -50,25 +57,31 @@ MainWindow::MainWindow(QWidget *parent)
     imgTimmy = imgTimmy.scaled(100, 100, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     graficoTimmy = escena->addPixmap(imgTimmy);
 
-    osoTest = new OsoPeluche(350.0f, 50.0f, 100, 100);
+    osoTest = new OsoPeluche(390.0f, 50.0f, 100, 100);
     QPixmap imgOso("oso_peluche.png");
     imgOso = imgOso.scaled(100, 100, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     graficoOsoTest = escena->addPixmap(imgOso);
 
-    gancho = new Pendulo(400.0f, 150.0f, 60, 60, 250.0f, 2.5f);
+    gancho = new Pendulo(400.0f, 540.0f, 70, 70, 650.0f, 0.5f);
     QPixmap imgGancho("gancho.png");
     imgGancho = imgGancho.scaled(60, 60, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     graficoGancho = escena->addPixmap(imgGancho);
 
     // ======================================================================
-    // NUEVO: CONFIGURACIÓN DEL HUD (TEXTOS EN PANTALLA)
+    // CONFIGURACIÓN DEL HUD (CORAZONES Y TIEMPO)
     // ======================================================================
-    textoVidas = new QGraphicsTextItem();
-    textoVidas->setFont(QFont("Arial", 16, QFont::Bold));
-    textoVidas->setDefaultTextColor(Qt::red);
-    textoVidas->setPos(30, 30);
-    textoVidas->setZValue(10); // Siempre por encima de todo
-    escena->addItem(textoVidas);
+    // Cargamos la imagen del corazóna
+    QPixmap imgCorazon("corazon.png");
+    imgCorazon = imgCorazon.scaled(60, 60, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
+
+    // Creamos 3 corazones (asumiendo que Timmy empieza con 3 vidas)
+    for (int i = 0; i < 3; i++) {
+        QGraphicsPixmapItem* graficoCorazon = escena->addPixmap(imgCorazon);
+        // Los posicionamos en la esquina superior izquierda, separados por 40 píxeles
+        graficoCorazon->setPos(30 + (i * 40), 30);
+        graficoCorazon->setZValue(10); // Siempre por encima del fondo
+        iconosVidas.push_back(graficoCorazon);
+    }
 
     textoTiempo = new QGraphicsTextItem();
     textoTiempo->setFont(QFont("Arial", 16, QFont::Bold));
@@ -120,8 +133,12 @@ void MainWindow::cargarNivel(int numeroNivel) {
         if (filtroOscuro) filtroOscuro->show();
         if (graficoOsoTest) graficoOsoTest->show();
         if (graficoGancho) graficoGancho->hide();
+        //if (graficoJefe) graficoJefe->hide();
 
-        framesSobrevividos = 0; // Reiniciamos el tiempo al iniciar el Nivel 1
+        // Ocultamos el fondo del almacén
+        if (fondoFijoNivel2) fondoFijoNivel2->hide();
+
+        framesSobrevividos = 0;
     }
     else if (nivelActual == 2) {
         timmy->setGravedadActiva(true);
@@ -134,8 +151,12 @@ void MainWindow::cargarNivel(int numeroNivel) {
         if (filtroOscuro) filtroOscuro->hide();
         if (graficoOsoTest) graficoOsoTest->hide();
         if (graficoGancho) graficoGancho->show();
+        //if (graficoJefe) graficoJefe->show();
 
-        textoTiempo->setPlainText(QString("¡JEFE FINAL!")); // Cambiamos el texto
+        // Mostramos el fondo del almacén
+        if (fondoFijoNivel2) fondoFijoNivel2->show();
+
+        textoTiempo->setPlainText(QString("¡JEFE FINAL!"));
     }
 }
 
@@ -195,10 +216,17 @@ void MainWindow::actualizarJuego() {
 
     try {
         // ==================================================================
-        // NUEVO: ACTUALIZACIÓN DEL HUD Y CONDICIONES DE VICTORIA/DERROTA
+        // ACTUALIZACIÓN DEL HUD (CORAZONES)
         // ==================================================================
-        // Actualizamos el texto de vidas rojas en la esquina
-        textoVidas->setPlainText(QString("Vidas: %1").arg(timmy->getVidas()));
+        int vidasActuales = timmy->getVidas();
+
+        for (int i = 0; i < (int)iconosVidas.size(); i++) {
+            if (i < vidasActuales) {
+                iconosVidas[i]->show(); // Mostrar si aún tiene esta vida
+            } else {
+                iconosVidas[i]->hide(); // Ocultar si ya la perdió
+            }
+        }
 
         // Comprobamos si perdimos
         if (timmy->getVidas() <= 0) {
