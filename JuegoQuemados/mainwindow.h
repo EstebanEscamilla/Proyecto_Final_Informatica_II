@@ -6,8 +6,8 @@
 #include <QGraphicsView>
 #include <QGraphicsRectItem>
 #include <QGraphicsPixmapItem>
-#include <QGraphicsTextItem> // NUEVO: Para los textos en pantalla
-#include <QFont>             // NUEVO: Para cambiar el tipo de letra
+#include <QGraphicsTextItem>
+#include <QFont>
 #include <QTimer>
 #include <QKeyEvent>
 #include <vector>
@@ -17,6 +17,7 @@
 #include "osopeluche.h"
 #include "botonafilado.h"
 #include "pendulo.h"
+#include "munecocuerda.h" // <-- CRUCIAL: Aquí le enseñamos a la ventana qué es un MunecoCuerda
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -49,11 +50,11 @@ private:
     QGraphicsRectItem *paredIzquierda;
     QGraphicsRectItem *paredDerecha;
 
-    // Fondos móviles y filtros
+    // Fondos móviles y estáticos
     QGraphicsPixmapItem *fondoCinta1;
     QGraphicsPixmapItem *fondoCinta2;
     QGraphicsRectItem *filtroOscuro;
-    QGraphicsPixmapItem *fondoFijoNivel2;
+    QGraphicsPixmapItem *fondoFijoNivel2; // Fondo del almacén
     float velCinta;
 
     // Protagonista y proyectil principal
@@ -65,18 +66,26 @@ private:
     // Enemigos y obstáculos
     OsoPeluche *osoTest;
     QGraphicsPixmapItem *graficoOsoTest;
-    Pendulo *gancho;
+    Pendulo *gancho; // Ahora disfrazado de caja embrujada
     QGraphicsPixmapItem *graficoGancho;
+
+    // ==========================================
+    // ¡AQUÍ ESTÁ LA SOLUCIÓN A TU ERROR!
+    // ==========================================
+    MunecoCuerda *jefeFinal;
+    QGraphicsPixmapItem *graficoJefe;
 
     // Proyectiles enemigos
     std::vector<BotonAfilado*> listaBotones;
     std::vector<QGraphicsPixmapItem*> listaGraficosBotones;
 
-    // NUEVO: Interfaz de Usuario (HUD) y Lógica de Progreso
-    std::vector<QGraphicsPixmapItem*> iconosVidas;
+    // Interfaz de Usuario (HUD) Actualizada
+    std::vector<QGraphicsPixmapItem*> iconosVidas; // Vector de corazones
     QGraphicsTextItem *textoTiempo;
-    int framesSobrevividos; // Contador interno para medir los segundos
-    void gameOver();        // Función para terminar la partida
+    int framesSobrevividos;
+
+    void gameOver();
+    void victoria();
 
     // Interruptores de estado
     bool teclaIzquierda;
@@ -85,6 +94,14 @@ private:
     bool teclaAbajo;
     bool pelotaEnMano;
     int nivelActual;
+
+    // Interruptores de estado
+    int direccionOso; // 1 para derecha, -1 para izquierda
+
+    // Variables para el Bonus del Nivel 1
+    QGraphicsPixmapItem *graficoBonus;
+    bool bonusActivo;
+    float tiempoParaBonus;
 
     // Funciones auxiliares
     void cargarNivel(int numeroNivel);

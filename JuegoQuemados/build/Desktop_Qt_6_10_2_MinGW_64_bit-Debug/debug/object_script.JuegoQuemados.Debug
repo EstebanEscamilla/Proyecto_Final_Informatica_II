@@ -1,0 +1,12 @@
+debug/botonafilado.o
+debug/entidad.o
+debug/excepciones.o
+debug/fisicaobjeto.o
+debug/main.o
+debug/mainwindow.o
+debug/munecocuerda.o
+debug/osopeluche.o
+debug/pelota.o
+debug/jugador.o
+debug/pendulo.o
+debug/moc_mainwindow.o
