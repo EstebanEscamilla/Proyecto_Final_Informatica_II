@@ -2,12 +2,10 @@
 #define MUNECOCUERDA_H
 
 #include "fisicaobjeto.h"
-#include <cmath> // Para calcular distancias
+#include <cmath>
 
-// Enumerador para la Máquina de Estados
 enum EstadoJefe {
-    PERSEGUIR,
-    ATACAR,
+    PATRULLAR,
     ENFRIAMIENTO
 };
 
@@ -15,26 +13,30 @@ class MunecoCuerda : public FisicaObjeto {
 private:
     int salud;
     float velocidadMovimiento;
+    float velocidadY;
+    int direccionX;
     EstadoJefe estadoActual;
 
-    // Temporizadores internos
-    float tiempoAtaque;
     float tiempoEnfriamiento;
+    float tiempoSalto;
+
+    float tiempoDisparo;
+    bool lanzarProyectil;
 
 public:
     MunecoCuerda(float x, float y, int ancho, int alto);
 
-    // Heredados de FisicaObjeto
     void aplicarFisica(float dt) override;
-    void actualizar(float dt) override; // Aquí meteremos la IA
-
-    // Acciones del Jefe
+    void actualizar(float dt) override;
     void recibirDano();
+
     int getSalud() const { return salud; }
     EstadoJefe getEstado() const { return estadoActual; }
 
-    // La función principal de su IA
-    void pensar(float dt, float timmyX, float timmyY);
+    bool getLanzarProyectil() const { return lanzarProyectil; }
+    void setLanzarProyectil(bool estado) { lanzarProyectil = estado; }
+
+    void pensar(float dt, float pelotaX, float pelotaY);
 };
 
 #endif // MUNECOCUERDA_H

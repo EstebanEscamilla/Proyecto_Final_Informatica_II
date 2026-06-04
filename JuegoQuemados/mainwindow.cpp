@@ -10,6 +10,12 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
 
+    // INICIALIZACIÓN DE AUDIO
+    reproductorMusica = new QMediaPlayer(this);
+    salidaAudio = new QAudioOutput(this);
+    reproductorMusica->setAudioOutput(salidaAudio);
+    salidaAudio->setVolume(0.5f); // Volumen al 50% para que no tape los efectos
+
     // 1. CONFIGURACIÓN DE LA VENTANA
     this->resize(802, 602);
     escena = new QGraphicsScene(0, 0, 800, 600, this);
@@ -52,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
     imgPelota = imgPelota.scaled(50, 50, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     graficoPelota = escena->addPixmap(imgPelota);
 
+    // Timmy vuelve a su versión simple
     timmy = new Jugador(390.0f, 560.0f, 100, 100);
     QPixmap imgTimmy("timmy_quieto.png");
     imgTimmy = imgTimmy.scaled(100, 100, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
@@ -67,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     QPixmap imgGancho("gancho.png");
     imgGancho = imgGancho.scaled(60, 60, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     graficoGancho = escena->addPixmap(imgGancho);
+    // El gancho no recibe setPos aquí porque es dinámico
 
     jefeFinal = new MunecoCuerda(650.0f, 380.0f, 100, 100);
     QPixmap imgJefe("muneco_cuerda.png");
@@ -79,9 +87,8 @@ MainWindow::MainWindow(QWidget *parent)
     graficoBonus = escena->addPixmap(imgBonus);
     graficoBonus->hide(); // Inicia invisible
 
-    // ======================================================================
+
     // CONFIGURACIÓN DEL HUD (CORAZONES Y TIEMPO)
-    // ======================================================================
     QPixmap imgCorazon("corazon.png");
     imgCorazon = imgCorazon.scaled(70, 70, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
 
@@ -134,6 +141,12 @@ void MainWindow::cargarNivel(int numeroNivel) {
     limpiarBotones();
 
     if (nivelActual == 1) {
+
+        // Iniciar música Nivel 1
+        reproductorMusica->setSource(QUrl::fromLocalFile("musica_nivel1.mp3"));
+        reproductorMusica->setLoops(QMediaPlayer::Infinite);
+        reproductorMusica->play();
+
         timmy->setGravedadActiva(false);
         timmy->setEnSuelo(true);
         timmy->setPosicion(350.0f, 400.0f);
@@ -143,14 +156,21 @@ void MainWindow::cargarNivel(int numeroNivel) {
         if (fondoCinta2) fondoCinta2->show();
         if (filtroOscuro) filtroOscuro->show();
         if (graficoOsoTest) graficoOsoTest->show();
-        if (graficoGancho) graficoGancho->hide();
         if (graficoJefe) graficoJefe->hide();
+        if (graficoGancho) graficoGancho->hide(); // Ocultamos la caja en Nivel 1
         if (fondoFijoNivel2) fondoFijoNivel2->hide();
 
         framesSobrevividos = 0;
         pelotaEnMano = true; // Aseguramos que inicie con balón
     }
     else if (nivelActual == 2) {
+
+        // Cambiar a música Nivel 2 (Jefe Final)
+        reproductorMusica->stop();
+        reproductorMusica->setSource(QUrl::fromLocalFile("musica_nivel2.mp3"));
+        reproductorMusica->setLoops(QMediaPlayer::Infinite);
+        reproductorMusica->play();
+
         timmy->setGravedadActiva(true);
         timmy->setEnSuelo(false);
         timmy->setPosicion(50.0f, 200.0f);
@@ -160,12 +180,20 @@ void MainWindow::cargarNivel(int numeroNivel) {
         if (fondoCinta2) fondoCinta2->hide();
         if (filtroOscuro) filtroOscuro->hide();
         if (graficoOsoTest) graficoOsoTest->hide();
-        if (graficoGancho) graficoGancho->show();
+
+        if (graficoGancho) graficoGancho->show(); // Mostramos la caja en Nivel 2
         if (graficoJefe) graficoJefe->show();
         if (fondoFijoNivel2) fondoFijoNivel2->show();
 
         textoTiempo->setPlainText(QString("¡JEFE FINAL!"));
-        pelotaEnMano = true; // Recarga para el jefe
+        pelotaEnMano = true;
+        jefeTienePelota = false;
+
+        // Reiniciamos la posición del jefe al entrar al nivel
+        if (jefeFinal) {
+            jefeFinal->setPosicion(650.0f, 380.0f);
+            jefeFinal->setLanzarProyectil(false);
+        }
     }
 }
 
@@ -215,28 +243,34 @@ void MainWindow::keyReleaseEvent(QKeyEvent *event) {
     if (event->key() == Qt::Key_Space) {
         float fuerzav0 = timmy->soltarCarga();
 
-        // REGLA: Solo dispara si el balón ya regresó a la mano
+        //Solo dispara si el balón ya regresó a la mano
         if (pelotaEnMano) {
             pelotaEnMano = false;
 
-            // En Nivel 2 usamos el tiro parabólico con gravedad
             if (nivelActual == 2 && miPelota) {
-                miPelota->lanzar(fuerzav0, 0.785f); // 45 grados
+                // Nacimiento seguro del proyectil
+                miPelota->setPosicion(timmy->getPosX() + 110.0f, timmy->getPosY() + 25.0f);
+
+                float umbralLaser = 100.0f;
+
+                if (fuerzav0 > umbralLaser) {
+                    // PULSO LARGO: Tiro Láser Totalmente Recto (Ángulo 0.0f)
+                    miPelota->lanzar(fuerzav0 * 1.5f, 0.0f);
+                } else {
+                    // TOQUE RÁPIDO: Parábola de bombeo controlada
+                    miPelota->lanzar(90.0f, 0.785f);
+                }
             }
         }
     }
 }
 
-// ======================================================================
-// BUCLE PRINCIPAL (GAME LOOP)
-// ======================================================================
+// BUCLE PRINCIPAL
 void MainWindow::actualizarJuego() {
     float dt = 0.05f;
 
     try {
-        // ------------------------------------------------------------------
         // 1. ACTUALIZACIÓN DEL HUD (CORAZONES Y TIEMPO)
-        // ------------------------------------------------------------------
         int vidasActuales = timmy->getVidas();
         for (int i = 0; i < (int)iconosVidas.size(); i++) {
             if (i < vidasActuales) {
@@ -260,12 +294,10 @@ void MainWindow::actualizarJuego() {
             }
         }
         else if (nivelActual == 2 && jefeFinal) {
-            textoTiempo->setPlainText(QString("Salud Jefe: %1 / 5").arg(jefeFinal->getSalud()));
+            textoTiempo->setPlainText(QString("Salud Jefe: %1 / 3").arg(jefeFinal->getSalud()));
         }
 
-        // ------------------------------------------------------------------
-        // 2. FONDOS Y MÁRGENES (NIVEL 1)
-        // ------------------------------------------------------------------
+        // 2. FONDOS Y MÁRGENES
         if (nivelActual == 1 && fondoCinta1 && fondoCinta2) {
             float nuevaY1 = fondoCinta1->y() + (velCinta * dt);
             float nuevaY2 = fondoCinta2->y() + (velCinta * dt);
@@ -281,7 +313,6 @@ void MainWindow::actualizarJuego() {
             if (teclaArriba) timmy->mover(0, -1);
             if (teclaAbajo) timmy->mover(0, 1);
 
-            // Márgenes del Nivel 1 (Ancho de cinta)
             if (timmy->getPosX() < 200.0f) timmy->setPosicion(200.0f, timmy->getPosY());
             if (timmy->getPosX() > 500.0f) timmy->setPosicion(500.0f, timmy->getPosY());
             if (timmy->getPosY() < 20.0f) timmy->setPosicion(timmy->getPosX(), 20.0f);
@@ -295,25 +326,20 @@ void MainWindow::actualizarJuego() {
             if (timmy->getPosX() > 680.0f) timmy->setPosicion(680.0f, timmy->getPosY());
         }
 
-        // ==================================================================
         // LÓGICA DEL ITEM BONUS (SOLO NIVEL 1)
-        // ==================================================================
         if (nivelActual == 1) {
             if (!bonusActivo) {
                 tiempoParaBonus -= dt;
                 if (tiempoParaBonus <= 0.0f) {
                     bonusActivo = true;
-                    // Aparece en una coordenada X aleatoria dentro de la cinta (200 a 460)
                     float randomX = 200.0f + static_cast<float>(rand() % 260);
                     graficoBonus->setPos(randomX, -50.0f);
                     graficoBonus->show();
                 }
             } else {
-                // El bonus baja a la misma velocidad de la cinta transportadora
                 float currentY = graficoBonus->y();
                 graficoBonus->setY(currentY + (velCinta * dt));
 
-                // Colisión Timmy vs Bonus
                 float boxX = graficoBonus->x();
                 float boxY = graficoBonus->y();
                 float tx = timmy->getPosX();
@@ -323,15 +349,12 @@ void MainWindow::actualizarJuego() {
                 bool hitY = (boxY + 40.0f >= ty) && (ty + 100.0f >= boxY);
 
                 if (hitX && hitY) {
-                    // ¡Premio! regala 10 segundos enteros en el cronómetro
                     framesSobrevividos += 600;
-
                     bonusActivo = false;
                     graficoBonus->hide();
-                    tiempoParaBonus = 12.0f; // Volverá a caer otro en 12 segundos
+                    tiempoParaBonus = 12.0f;
                 }
                 else if (boxY > 600.0f) {
-                    // Si se te escapó por abajo
                     bonusActivo = false;
                     graficoBonus->hide();
                     tiempoParaBonus = 12.0f;
@@ -339,9 +362,7 @@ void MainWindow::actualizarJuego() {
             }
         }
 
-        // ------------------------------------------------------------------
-        // 3. FÍSICAS BASE (TIMMY Y CAJA EMBRUJADA)
-        // ------------------------------------------------------------------
+        // 3. FÍSICAS BASE
         timmy->aplicarFisica(dt);
         if (nivelActual == 2) {
             if (timmy->getPosY() >= 480.0f) {
@@ -350,48 +371,53 @@ void MainWindow::actualizarJuego() {
             }
         }
 
+        // 3.5 FÍSICAS Y HITBOX DE LA CAJA EMBRUJADA
         if (nivelActual == 2 && gancho) {
             gancho->aplicarFisica(dt);
+
             float gx = gancho->getPosX();
             float gy = gancho->getPosY();
             float tx = timmy->getPosX();
             float ty = timmy->getPosY();
-            bool colisionX = (gx + 60.0f >= tx) && (tx + 100.0f >= gx);
-            bool colisionY = (gy + 60.0f >= ty) && (ty + 100.0f >= gy);
+
+            // Hitbox Caja: Visual de 60x60, le quitamos 10px de borde
+            float gIzquierda = gx + 10.0f;
+            float gDerecha   = gx + 50.0f;
+            float gArriba    = gy + 10.0f;
+            float gAbajo     = gy + 50.0f;
+
+            // Hitbox Timmy: Igual que en la mecánica de la pelota
+            float tIzquierda = tx + 20.0f;
+            float tDerecha   = tx + 80.0f;
+            float tArriba    = ty + 10.0f;
+            float tAbajo     = ty + 90.0f;
+
+            // Verificamos si los dos cuadros invisibles se cruzan
+            bool colisionX = (gDerecha >= tIzquierda) && (tDerecha >= gIzquierda);
+            bool colisionY = (gAbajo >= tArriba) && (tAbajo >= gArriba);
+
             if (colisionX && colisionY) {
                 timmy->reducirVida();
+                // Castigo: Timmy es devuelto al lado izquierdo
                 timmy->setPosicion(50.0f, 200.0f);
             }
         }
 
-        // ------------------------------------------------------------------
         // 4. ENEMIGOS (JEFE Y OSO)
-        // ------------------------------------------------------------------
         if (nivelActual == 2 && jefeFinal) {
             jefeFinal->aplicarFisica(dt);
-            jefeFinal->pensar(dt, timmy->getPosX(), timmy->getPosY());
+            jefeFinal->pensar(dt, miPelota->getPosX(), miPelota->getPosY());
 
             float jx = jefeFinal->getPosX();
             float jy = jefeFinal->getPosY();
             float tx = timmy->getPosX();
             float ty = timmy->getPosY();
-            float px = miPelota->getPosX();
-            float py = miPelota->getPosY();
 
             bool colisionTimmyJefeX = (jx + 100.0f >= tx) && (tx + 100.0f >= jx);
             bool colisionTimmyJefeY = (jy + 100.0f >= ty) && (ty + 100.0f >= jy);
             if (colisionTimmyJefeX && colisionTimmyJefeY && jefeFinal->getEstado() != ENFRIAMIENTO) {
                 timmy->reducirVida();
                 timmy->setPosicion(50.0f, 200.0f);
-            }
-
-            if (!pelotaEnMano) {
-                bool colisionPelotaJefeX = (jx + 100.0f >= px) && (px + 50.0f >= jx);
-                bool colisionPelotaJefeY = (jy + 100.0f >= py) && (py + 50.0f >= jy);
-                if (colisionPelotaJefeX && colisionPelotaJefeY && jefeFinal->getEstado() != ENFRIAMIENTO) {
-                    jefeFinal->recibirDano();
-                    miPelota->rebotarHorizontal();
-                }
             }
 
             if (jefeFinal->getSalud() <= 0) {
@@ -401,7 +427,6 @@ void MainWindow::actualizarJuego() {
         }
 
         if (nivelActual == 1 && osoTest) {
-            // Patrullaje
             float velPatrullaje = 100.0f;
             float nuevaPosX = osoTest->getPosX() + (direccionOso * velPatrullaje * dt);
             osoTest->setPosicion(nuevaPosX, osoTest->getPosY());
@@ -409,7 +434,6 @@ void MainWindow::actualizarJuego() {
             if (osoTest->getPosX() >= 550.0f) direccionOso = -1;
             if (osoTest->getPosX() <= 150.0f) direccionOso = 1;
 
-            // Disparo
             BotonAfilado* nuevoBoton = osoTest->disparar(dt, 0.0f, 220.0f);
             if (nuevoBoton != nullptr) {
                 listaBotones.push_back(nuevoBoton);
@@ -421,110 +445,181 @@ void MainWindow::actualizarJuego() {
             }
         }
 
-        // COLISIONES BOTONES AFILADOS
-        for (size_t i = 0; i < listaBotones.size(); ) {
-            listaBotones[i]->aplicarFisica(dt);
-            listaGraficosBotones[i]->setPos(listaBotones[i]->getPosX(), listaBotones[i]->getPosY());
+        // SEGURO DE BOTONES: Solo comprobamos matemática si estamos en el Nivel 1
+        if (nivelActual == 1) {
+            for (size_t i = 0; i < listaBotones.size(); ) {
+                listaBotones[i]->aplicarFisica(dt);
+                listaGraficosBotones[i]->setPos(listaBotones[i]->getPosX(), listaBotones[i]->getPosY());
 
-            float bx = listaBotones[i]->getPosX();
-            float by = listaBotones[i]->getPosY();
-            float tx = timmy->getPosX();
-            float ty = timmy->getPosY();
+                float bx = listaBotones[i]->getPosX();
+                float by = listaBotones[i]->getPosY();
+                float tx = timmy->getPosX();
+                float ty = timmy->getPosY();
 
-            // Colisión Pelota vs Botón (Mecánica de Escudo)
-            if (!pelotaEnMano) {
-                float px = miPelota->getPosX();
-                float py = miPelota->getPosY();
+                if (!pelotaEnMano) {
+                    float px = miPelota->getPosX();
+                    float py = miPelota->getPosY();
 
-                bool choquePelotaX = (bx + 60.0f >= px) && (px + 50.0f >= bx);
-                bool choquePelotaY = (by + 60.0f >= py) && (py + 50.0f >= by);
+                    bool choquePelotaX = (bx + 60.0f >= px) && (px + 50.0f >= bx);
+                    bool choquePelotaY = (by + 60.0f >= py) && (py + 50.0f >= by);
 
-                if (choquePelotaX && choquePelotaY) {
-                    pelotaEnMano = true; // Tu balón rebota de vuelta a ti al instante
+                    if (choquePelotaX && choquePelotaY) {
+                        pelotaEnMano = true;
+                        escena->removeItem(listaGraficosBotones[i]);
+                        delete listaGraficosBotones[i];
+                        delete listaBotones[i];
+                        listaBotones.erase(listaBotones.begin() + i);
+                        listaGraficosBotones.erase(listaGraficosBotones.begin() + i);
+                        continue;
+                    }
+                }
 
-                    // Destruimos el botón enemigo
+                bool colisionX = (bx + 60.0f >= tx) && (tx + 100.0f >= bx);
+                bool colisionY = (by + 60.0f >= ty) && (ty + 100.0f >= by);
+
+                if (colisionX && colisionY) {
+                    timmy->reducirVida();
                     escena->removeItem(listaGraficosBotones[i]);
                     delete listaGraficosBotones[i];
                     delete listaBotones[i];
                     listaBotones.erase(listaBotones.begin() + i);
                     listaGraficosBotones.erase(listaGraficosBotones.begin() + i);
-                    continue; // Saltamos a comprobar el siguiente botón
+                    continue;
                 }
-            }
 
-            // 2. Colisión Botón vs Timmy
-            bool colisionX = (bx + 60.0f >= tx) && (tx + 100.0f >= bx);
-            bool colisionY = (by + 60.0f >= ty) && (ty + 100.0f >= by);
-
-            if (colisionX && colisionY) {
-                timmy->reducirVida();
-                escena->removeItem(listaGraficosBotones[i]);
-                delete listaGraficosBotones[i];
-                delete listaBotones[i];
-                listaBotones.erase(listaBotones.begin() + i);
-                listaGraficosBotones.erase(listaGraficosBotones.begin() + i);
-                continue;
-            }
-
-            // 3. Destruir si sale de la pantalla
-            if (by > 580.0f) {
-                escena->removeItem(listaGraficosBotones[i]);
-                delete listaGraficosBotones[i];
-                delete listaBotones[i];
-                listaBotones.erase(listaBotones.begin() + i);
-                listaGraficosBotones.erase(listaGraficosBotones.begin() + i);
-            } else {
-                i++;
+                if (by > 580.0f) {
+                    escena->removeItem(listaGraficosBotones[i]);
+                    delete listaGraficosBotones[i];
+                    delete listaBotones[i];
+                    listaBotones.erase(listaBotones.begin() + i);
+                    listaGraficosBotones.erase(listaGraficosBotones.begin() + i);
+                } else {
+                    i++;
+                }
             }
         }
 
-        // ------------------------------------------------------------------
-        // 5. LÓGICA DE LA PELOTA Y RECARGAS
-        // ------------------------------------------------------------------
-        if (pelotaEnMano) {
-            miPelota->setPosicion(timmy->getPosX() + 25.0f, timmy->getPosY() - 20.0f);
-        } else {
-            if (nivelActual == 1) {
-                // MRU Línea Recta
+        // 5. LÓGICA DE LA PELOTA Y RECARGAS (DUELO DE QUEMADOS)
+        if (nivelActual == 1) {
+            if (pelotaEnMano) {
+                miPelota->setPosicion(timmy->getPosX() + 25.0f, timmy->getPosY() - 20.0f);
+            } else {
                 float nuevaY = miPelota->getPosY() - (400.0f * dt);
                 miPelota->setPosicion(miPelota->getPosX(), nuevaY);
 
                 float px = miPelota->getPosX();
                 float py = miPelota->getPosY();
 
-                // Falla (Toca el Techo)
-                if (py <= 20.0f) {
-                    pelotaEnMano = true;
-                }
+                if (py <= 20.0f) pelotaEnMano = true;
 
-                // Acierto (Golpea al Oso)
                 if (osoTest) {
                     float ox = osoTest->getPosX();
                     float oy = osoTest->getPosY();
-                    bool colisionOsoX = (ox + 100.0f >= px) && (px + 50.0f >= ox);
-                    bool colisionOsoY = (oy + 100.0f >= py) && (py + 50.0f >= oy);
-
-                    if (colisionOsoX && colisionOsoY) {
+                    if ((ox + 100.0f >= px) && (px + 50.0f >= ox) && (oy + 100.0f >= py) && (py + 50.0f >= oy)) {
                         pelotaEnMano = true;
-                        framesSobrevividos += 300; // Premio: +5 Segundos
+                        framesSobrevividos += 300;
                     }
                 }
             }
-            else if (nivelActual == 2) {
-                // Física Parabólica
+        }
+        else if (nivelActual == 2 && jefeFinal != nullptr) {
+            // 1. TIMMY TIENE LA PELOTA
+            if (pelotaEnMano) {
+                miPelota->setPosicion(timmy->getPosX() + 50.0f, timmy->getPosY() + 25.0f);
+                graficoPelota->show();
+            }
+            // 2. EL JEFE TIENE LA PELOTA
+            else if (jefeTienePelota) {
+                graficoPelota->hide();
+
+                if (jefeFinal->getLanzarProyectil()) {
+                    jefeTienePelota = false;
+                    jefeFinal->setLanzarProyectil(false);
+
+                    // La pelota nace justo enfrente del jefe
+                    miPelota->setPosicion(jefeFinal->getPosX() - 60.0f, jefeFinal->getPosY() + 25.0f);
+                    graficoPelota->show();
+
+                    // CONTROL DE DISPARO DEFINITIVO PARA EL JEFE
+                    int selectorVelocidad = rand() % 3;
+                    float velocidadElegida = 400.0f;
+
+                    if (selectorVelocidad == 0) {
+                        velocidadElegida = 250.0f; // Tiro lento
+                    } else if (selectorVelocidad == 1) {
+                        velocidadElegida = 300.0f; // Tiro normal estándar
+                    } else {
+                        velocidadElegida = 450.0f; // Tiro bala
+                    }
+
+                    miPelota->lanzar(velocidadElegida, 0.0f);
+                    miPelota->rebotarHorizontal();
+                }
+            }
+            // 3. LA PELOTA ESTÁ VOLANDO
+            else {
                 miPelota->actualizar(dt);
                 float px = miPelota->getPosX();
                 float py = miPelota->getPosY();
-                if (py >= 530.0f) { miPelota->setPosicion(px, 529.0f); miPelota->rebotarVertical(); }
-                else if (py <= 20.0f) { miPelota->setPosicion(px, 21.0f); miPelota->rebotarVertical(); }
-                if (px >= 730.0f) { miPelota->setPosicion(729.0f, py); miPelota->rebotarHorizontal(); }
-                else if (px <= 20.0f) { miPelota->setPosicion(21.0f, py); miPelota->rebotarHorizontal(); }
+
+                float jx = jefeFinal->getPosX();
+                float jy = jefeFinal->getPosY();
+                float tx = timmy->getPosX();
+                float ty = timmy->getPosY();
+
+                // AJUSTE DE HITBOXES
+                float pIzquierda = px + 10.0f;
+                float pDerecha   = px + 40.0f;
+                float pArriba    = py + 10.0f;
+                float pAbajo     = py + 40.0f;
+
+                float jIzquierda = jx + 20.0f;
+                float jDerecha   = jx + 80.0f;
+                float jArriba    = jy + 10.0f;
+                float jAbajo     = jy + 90.0f;
+
+                float tIzquierda = tx + 20.0f;
+                float tDerecha   = tx + 80.0f;
+                float tArriba    = ty + 10.0f;
+                float tAbajo     = ty + 90.0f;
+
+                // COLISIONES PRECISAS
+                bool hitBoss = (jDerecha >= pIzquierda) && (pDerecha >= jIzquierda) &&
+                               (jAbajo >= pArriba) && (pAbajo >= jArriba);
+
+                bool hitTimmy = (tDerecha >= pIzquierda) && (pDerecha >= tIzquierda) &&
+                                (tAbajo >= pArriba) && (pAbajo >= tArriba);
+
+                // Acierto al Jefe
+                if (hitBoss && jefeFinal->getEstado() != ENFRIAMIENTO) {
+                    jefeFinal->recibirDano();
+                    jefeTienePelota = true;
+                }
+                // Acierto a Timmy
+                else if (hitTimmy) {
+                    timmy->reducirVida();
+                    pelotaEnMano = true;
+                }
+
+                // REBOTES DE PAREDES Y PISO
+                if (py >= 530.0f) {
+                    miPelota->setPosicion(px, 529.0f);
+                    miPelota->rebotarVertical();
+                } else if (py <= 20.0f) {
+                    miPelota->setPosicion(px, 21.0f);
+                    miPelota->rebotarVertical();
+                }
+
+                // REGLA TERRITORIAL
+                if (px >= 730.0f) {
+                    jefeTienePelota = true;
+                } else if (px <= 20.0f) {
+                    pelotaEnMano = true;
+                }
             }
         }
 
-        // ------------------------------------------------------------------
         // 6. RENDERIZADO VISUAL
-        // ------------------------------------------------------------------
         graficoPelota->setPos(miPelota->getPosX(), miPelota->getPosY());
         graficoTimmy->setPos(timmy->getPosX(), timmy->getPosY());
 
@@ -532,6 +627,7 @@ void MainWindow::actualizarJuego() {
             graficoOsoTest->setPos(osoTest->getPosX(), osoTest->getPosY());
         }
         if (nivelActual == 2) {
+            // Renderizamos la caja embrujada
             if (graficoGancho && gancho) graficoGancho->setPos(gancho->getPosX(), gancho->getPosY());
             if (graficoJefe && jefeFinal) graficoJefe->setPos(jefeFinal->getPosX(), jefeFinal->getPosY());
         }

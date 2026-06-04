@@ -14,8 +14,8 @@ Jugador::Jugador(float x, float y, int ancho, int alto)
     factorAdrenalina = 1.2f;
 
     velY = 0.0f;
-    gravedad = 400.0f;      // Fuerza de atracción hacia abajo
-    fuerzaSalto = -220.0f;   // Negativo porque en Qt "arriba" es restar en Y
+    gravedad = 400.0f;       // Fuerza de atracción hacia abajo
+    fuerzaSalto = -250.0f;   // Negativo porque en Qt "arriba" es restar en Y
     enSuelo = true;
     gravedadActiva = false;  // Por defecto inicia en Nivel 1 (sin gravedad)
 }
@@ -38,7 +38,6 @@ float Jugador::soltarCarga() {
 }
 
 void Jugador::actualizar(float dt) {
-    // La mantenemos por si la clase Entidad la exige
 }
 
 void Jugador::aplicarFisica(float dt) {
@@ -48,7 +47,7 @@ void Jugador::aplicarFisica(float dt) {
         }
     }
 
-    // NUEVO: Simulación cinemática de caída libre para Timmy
+    // Simulación cinemática de caída libre para Timmy
     if (gravedadActiva) {
         if (!enSuelo) {
             velY += gravedad * dt; // La gravedad aumenta la velocidad de caída

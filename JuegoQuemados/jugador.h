@@ -38,9 +38,9 @@ public:
     void setGravedadActiva(bool activa) { gravedadActiva = activa; }
     void setEnSuelo(bool suelo) { enSuelo = suelo; if(suelo) velY = 0.0f; }
 
-    // Cumpliendo todos los contratos de herencia
+    // todos los contratos de herencia
     void actualizar(float dt) override;
-    void aplicarFisica(float dt) override; // ¡El contrato que faltaba!
+    void aplicarFisica(float dt) override;
 
     void actualizarEstado(const std::vector<FisicaObjeto*>& enemigos);
 

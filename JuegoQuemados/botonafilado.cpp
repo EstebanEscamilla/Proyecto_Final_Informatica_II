@@ -12,5 +12,4 @@ void BotonAfilado::aplicarFisica(float dt) {
 }
 
 void BotonAfilado::actualizar(float dt) {
-    // La actualización matemática directa
 }

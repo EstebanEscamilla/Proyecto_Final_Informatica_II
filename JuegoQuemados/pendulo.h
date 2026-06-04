@@ -6,10 +6,10 @@
 
 class Pendulo : public FisicaObjeto {
 private:
-    float xCentro;           // El punto medio (X0) de la oscilación
-    float amplitud;          // Distancia máxima de recorrido (A)
-    float velocidadAngular;  // Frecuencia de oscilación (Omega)
-    float tiempoOscilacion;  // El reloj interno del M.A.S (t)
+    float xCentro;
+    float amplitud;
+    float velocidadAngular;
+    float tiempoOscilacion;
 
 public:
     Pendulo(float x, float y, int ancho, int alto, float amp, float omega);

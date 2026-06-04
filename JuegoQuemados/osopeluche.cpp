@@ -8,11 +8,9 @@ OsoPeluche::OsoPeluche(float x, float y, int ancho, int alto)
 }
 
 void OsoPeluche::aplicarFisica(float dt) {
-    // El oso es una torreta estática, no se mueve por físicas
 }
 
 void OsoPeluche::actualizar(float dt) {
-    // Reservado por si le ponemos animación al oso más adelante
 }
 
 BotonAfilado* OsoPeluche::disparar(float dt, float dirX, float dirY) {
@@ -22,7 +20,7 @@ BotonAfilado* OsoPeluche::disparar(float dt, float dirX, float dirY) {
     if (tiempoDisparo >= cadenciaDisparo) {
         tiempoDisparo = 0.0f; // Reiniciamos el reloj para el próximo disparo
 
-        // Creamos y disparamos el botón (nace un poco desplazado hacia el centro del oso)
+        // Creamos y disparamos el boton (nace un poco desplazado hacia el centro del oso)
         return new BotonAfilado(this->posX + 30.0f, this->posY + 80.0f, 40, 40, dirX, dirY);
     }
 

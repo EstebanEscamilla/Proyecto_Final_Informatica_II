@@ -11,13 +11,15 @@
 #include <QTimer>
 #include <QKeyEvent>
 #include <vector>
+#include <QMediaPlayer>
+#include <QAudioOutput>
 
 #include "jugador.h"
 #include "pelota.h"
 #include "osopeluche.h"
 #include "botonafilado.h"
 #include "pendulo.h"
-#include "munecocuerda.h" // <-- CRUCIAL: Aquí le enseñamos a la ventana qué es un MunecoCuerda
+#include "munecocuerda.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -50,11 +52,15 @@ private:
     QGraphicsRectItem *paredIzquierda;
     QGraphicsRectItem *paredDerecha;
 
+    // Variables de Sonido
+    QMediaPlayer *reproductorMusica;
+    QAudioOutput *salidaAudio;
+
     // Fondos móviles y estáticos
     QGraphicsPixmapItem *fondoCinta1;
     QGraphicsPixmapItem *fondoCinta2;
     QGraphicsRectItem *filtroOscuro;
-    QGraphicsPixmapItem *fondoFijoNivel2; // Fondo del almacén
+    QGraphicsPixmapItem *fondoFijoNivel2;
     float velCinta;
 
     // Protagonista y proyectil principal
@@ -66,12 +72,10 @@ private:
     // Enemigos y obstáculos
     OsoPeluche *osoTest;
     QGraphicsPixmapItem *graficoOsoTest;
-    Pendulo *gancho; // Ahora disfrazado de caja embrujada
+    Pendulo *gancho;
     QGraphicsPixmapItem *graficoGancho;
 
-    // ==========================================
-    // ¡AQUÍ ESTÁ LA SOLUCIÓN A TU ERROR!
-    // ==========================================
+    //Jefe de cuerda
     MunecoCuerda *jefeFinal;
     QGraphicsPixmapItem *graficoJefe;
 
@@ -79,8 +83,8 @@ private:
     std::vector<BotonAfilado*> listaBotones;
     std::vector<QGraphicsPixmapItem*> listaGraficosBotones;
 
-    // Interfaz de Usuario (HUD) Actualizada
-    std::vector<QGraphicsPixmapItem*> iconosVidas; // Vector de corazones
+    // Interfaz de Usuario (HUD)
+    std::vector<QGraphicsPixmapItem*> iconosVidas;
     QGraphicsTextItem *textoTiempo;
     int framesSobrevividos;
 
@@ -93,6 +97,7 @@ private:
     bool teclaArriba;
     bool teclaAbajo;
     bool pelotaEnMano;
+    bool jefeTienePelota;
     int nivelActual;
 
     // Interruptores de estado
